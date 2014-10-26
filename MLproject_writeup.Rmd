@@ -1,0 +1,115 @@
+---
+title: "ML_project_witeup"
+date: "26 October 2014"
+output: html_document
+---
+
+## Executive Summary
+
+
+## Data Preprocessing
+The first step of our analysis consisted in the import of the data set in R variables. We separarated the data set into two pieces:
+- the complete dataset provided by the project (projectSet), which contains nearly 20000 observations
+- the dataset on which our project is graded upon (final20Set), which contains 20 observations
+
+```{r preProcessing, cache=TRUE}
+library(caret);
+projectSet <- read.csv("./data/pml-training.csv")
+final20Set <- read.csv("./data/pml-testing.csv")
+```
+
+In order to decide the transformations needed on the data set and to select the feature to incude in the model, we documented on the website http://groupware.les.inf.puc-rio.br/har, and we printed a summary of the dataset.
+```{r dataSummary, results='hide'}
+summary(projectSet)
+str(projectSet)
+```
+From the inspection of the data we noticed that some variables are not significant to our analysis:
+- some variables are non-numeric and contains calculation errors (such as #DIV/0!)
+- some variables are "almost always" NA
+- some columns are incremental or timestamps
+
+Thus, we defined a set of "selectedColumns" that we are willing to keep in our dataset.
+```{r columnsSelection}
+# factor columns are not significant (except "classe")
+colFactors <- (sapply(projectSet, class) == "factor")
+# columns with more than 90% NAs are not significat
+colNAs <- colSums(is.na(projectSet))/nrow(projectSet)
+selectedColumns <- colnames(projectSet)[(colFactors == FALSE) & (colNAs < 0.9)]
+# the first 4 columns are incemental and timestamp data: they can be removed
+selectedColumns <- selectedColumns[-c(1,2,3,4)]
+selectedColumns
+# clean environment
+rm(colNAs); rm(colFactors);
+```
+
+The remaining columns are significant and capture the problem features: they mostly correspond to position and acceleration variables of belt, arm, dumbbell and forearm of the testing subject.
+
+Thus, we redefine the reduced (variables suffixed by "Red") datasets as follows:
+```{r}
+projectSetRed <- projectSet[c("classe", selectedColumns)]
+final20SetRed <- final20Set[selectedColumns]
+```
+In the following section, we build models on these data sets.
+
+## Cross-Validation sets
+We decided to divide our project data set into a training set and a testing set. We applied a 70% - 30% split of the data.
+```{r setTestTrain}
+set.seed(111)
+inTrain <- createDataPartition(y = projectSetRed$classe, p = 0.7, list = FALSE)
+trainingSet <- projectSetRed[inTrain,]
+testingSet <- projectSetRed[-inTrain,]
+```
+
+## Principal Component Analysis
+In order to further reduce our problem size, we applied Principal Component Analysis to our data sets. We used the "thresh" parameter to constrain the total variance of the model captured by the PCA transformation of the data to 99%.
+
+```{r applyPCA}
+pcaPreProcessing <- preProcess(trainingSet[,-1], method = "pca", thresh=.99)
+# removing "classe" column, that is the first in the data set
+trainingSetPreProc <- predict(pcaPreProcessing, trainingSet[-1])
+trainingSetPreProc <- cbind(trainingSet$classe, trainingSetPreProc)
+colnames(trainingSetPreProc)[1] <- "classe"
+```
+
+## Random Forest Model
+```{r randomForestModel, cache=TRUE}
+library(randomForest)
+modelRF <- randomForest(classe ~ ., data = trainingSetPreProc)
+modelRF
+```
+
+## In-Sample Error and Out-of-Sample Error
+We computed sample errors on training set and testing set.
+```{r computeErrors, cache=TRUE}
+table(trainingSetPreProc$classe, predict(modelRF, trainingSetPreProc))
+
+testingSetPreProc <- predict(pcaPreProcessing, testingSet[-1])
+
+table(testingSet$classe, predict(modelRF, testingSetPreProc))
+sum(testingSet$classe != predict(modelRF, testingSetPreProc)) / nrow(testingSetPreProc)
+```
+
+
+## Prediction for the "20 observations set"
+We finally applied the selected model to the data set containing 20 observations.
+``` {r}
+final20SetRedPreProc <- predict(pcaPreProcessing, final20SetRed)
+predict(modelRF, final20SetRedPreProc)
+```
+
+
+## Model without PCA
+```{r}
+modelRF2 <- randomForest(classe ~ ., data = trainingSet)
+modelRF2
+
+table(trainingSet$classe, predict(modelRF2, trainingSet))
+
+table(testingSet$classe, predict(modelRF2, testingSet))
+sum(testingSet$classe != predict(modelRF2, testingSet)) / nrow(testingSetPreProc)
+```
+
+``` {r}
+predict(modelRF2, final20SetRed)
+```
+
