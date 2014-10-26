@@ -59,31 +59,40 @@ if (window.hljs && document.readyState && document.readyState === "complete") {
 
 <div id="executive-summary" class="section level2">
 <h2>Executive Summary</h2>
-<p>We provided two random forest models to predict the “classe” variable of the project homework assignment.</p>
-<p>We first defined a subset of features of the complete data set.</p>
-<p>In order to further reduce te complexity of the data set, we applied PCA to the data.</p>
-<p>Then, we produced two random forest models, one using the PCA decomposition and one without considering the decomposition.</p>
-<p>We computed sample errors for both models and we predicted the output for the “20 observation data set” provided by the assignment.</p>
-<p>The non-PCA model predicted correctly all of the 20 observations.</p>
+<p>The provided data set contains measures taken from accelerometers placed in belt, arm, dumbbell and forearm of athletes performing barbell lifts correctly and incorrectly in different ways. The “classe” variable defines the way of execution of the exercise and is used as our predicted variable.</p>
+<p>We provided two random forest models to predict the “classe” variable. At first, we cleaned the model from variables that could not be used for our model. Then, in order to further reduce the complexity of the data set, we applied Principal Component Analysis (PCA) to the data.</p>
+<p>Finally, we produced two random forest models, one using the PCA decomposition and one without considering the decomposition. We computed the in-sample and out-sample accuracy for both models, considering a 70% - 30% split for training and testing sets. Then we used both models to predict the output for the “20 observation data set” provided by the assignment.</p>
+<p>The non-PCA model proved to be the more accurate between the two models. On the grading data set, the PCA RF-model predicted correctly 19/20 of the observation while the non-PCA RF-model predicted correctly 20/20 observations.</p>
 </div>
 <div id="data-preprocessing" class="section level2">
 <h2>Data Preprocessing</h2>
-<p>The first step of our analysis consisted in the import of the data set in R variables. We separarated the data set into two pieces: - the complete dataset provided by the project (projectSet), which contains nearly 20000 observations - the dataset on which our project is graded upon (final20Set), which contains 20 observations</p>
+<p>The first step of our analysis consisted in the loading of the data set in R variables. We separarated the data set into two pieces:</p>
+<ul>
+<li>the complete dataset provided by the project (projectSet), which contains nearly 20000 observations</li>
+<li>the dataset on which the assignment is graded upon (gradingSet), which contains 20 observations</li>
+</ul>
 <pre class="r"><code>library(caret);
+library(randomForest);
 projectSet &lt;- read.csv(&quot;./data/pml-training.csv&quot;)
-final20Set &lt;- read.csv(&quot;./data/pml-testing.csv&quot;)</code></pre>
+gradingSet &lt;- read.csv(&quot;./data/pml-testing.csv&quot;)</code></pre>
 <p>In order to decide the transformations needed on the data set and to select the feature to incude in the model, we documented on the website <a href="http://groupware.les.inf.puc-rio.br/har">http://groupware.les.inf.puc-rio.br/har</a>, and we printed a summary of the dataset.</p>
 <pre class="r"><code>summary(projectSet)
 str(projectSet)</code></pre>
-<p>From the inspection of the data we noticed that some variables are not significant to our analysis: - some variables are non-numeric and contains calculation errors (such as #DIV/0!) - some variables are “almost always” NA - some columns are incremental or timestamps</p>
+<p>From the inspection of the data we noticed that some variables are not significant to our analysis:</p>
+<ul>
+<li>some variables are non-numeric and contain calculation errors (such as #DIV/0!)</li>
+<li>some variables are “almost always” NA</li>
+<li>some columns are incremental or timestamps</li>
+</ul>
 <p>Thus, we defined a set of “selectedColumns” that we are willing to keep in our dataset.</p>
 <pre class="r"><code># factor columns are not significant (except &quot;classe&quot;)
 colFactors &lt;- (sapply(projectSet, class) == &quot;factor&quot;)
 # columns with more than 90% NAs are not significat
 colNAs &lt;- colSums(is.na(projectSet))/nrow(projectSet)
 selectedColumns &lt;- colnames(projectSet)[(colFactors == FALSE) &amp; (colNAs &lt; 0.9)]
-# the first 4 columns are incemental and timestamp data: they can be removed
+# the first 4 columns are incremental and timestamp data: they can be removed
 selectedColumns &lt;- selectedColumns[-c(1,2,3,4)]
+rm(colNAs); rm(colFactors);
 selectedColumns</code></pre>
 <pre><code>##  [1] &quot;roll_belt&quot;            &quot;pitch_belt&quot;           &quot;yaw_belt&quot;            
 ##  [4] &quot;total_accel_belt&quot;     &quot;gyros_belt_x&quot;         &quot;gyros_belt_y&quot;        
@@ -103,21 +112,19 @@ selectedColumns</code></pre>
 ## [46] &quot;gyros_forearm_z&quot;      &quot;accel_forearm_x&quot;      &quot;accel_forearm_y&quot;     
 ## [49] &quot;accel_forearm_z&quot;      &quot;magnet_forearm_x&quot;     &quot;magnet_forearm_y&quot;    
 ## [52] &quot;magnet_forearm_z&quot;</code></pre>
-<pre class="r"><code># clean environment
-rm(colNAs); rm(colFactors);</code></pre>
-<p>The remaining columns are significant and capture the problem features: they mostly correspond to position and acceleration variables of belt, arm, dumbbell and forearm of the testing subject.</p>
+<p>The remaining “selected” columns are significant and capture the problem features: they mostly correspond to position and acceleration variables of belt, arm, dumbbell and forearm of the testing subject.</p>
 <p>Thus, we redefine the reduced (variables suffixed by “Red”) datasets as follows:</p>
-<pre class="r"><code>projectSetRed &lt;- projectSet[c(&quot;classe&quot;, selectedColumns)]
-final20SetRed &lt;- final20Set[selectedColumns]</code></pre>
-<p>In the following section, we build models on these data sets.</p>
+<pre class="r"><code># classe is reintroduced since it is our algorithm's output
+projectSetRed &lt;- projectSet[c(&quot;classe&quot;, selectedColumns)]
+gradingSetRed &lt;- gradingSet[selectedColumns]</code></pre>
 </div>
-<div id="cross-validation-sets" class="section level2">
-<h2>Cross-Validation sets</h2>
-<p>We decided to divide our project data set into a training set and a testing set. We applied a 70% - 30% split of the data.</p>
-<pre class="r"><code>library(caret)</code></pre>
+<div id="cross-validation" class="section level2">
+<h2>Cross-Validation</h2>
+<p>We decided to divide our project data set into a training set and a testing set. We applied a 70% - 30% splitting of the data in order to define a training and testing set.</p>
+<pre class="r"><code>library(caret);</code></pre>
 <pre><code>## Loading required package: lattice
 ## Loading required package: ggplot2</code></pre>
-<pre class="r"><code>set.seed(999)
+<pre class="r"><code>set.seed(7777)
 inTrain &lt;- createDataPartition(y = projectSetRed$classe, p = 0.7, list = FALSE)
 trainingSet &lt;- projectSetRed[inTrain,]
 testingSet &lt;- projectSetRed[-inTrain,]</code></pre>
@@ -125,20 +132,32 @@ testingSet &lt;- projectSetRed[-inTrain,]</code></pre>
 <div id="principal-component-analysis" class="section level2">
 <h2>Principal Component Analysis</h2>
 <p>In order to further reduce our problem size, we applied Principal Component Analysis to our data sets. We used the “thresh” parameter to constrain the total variance of the model captured by the PCA transformation of the data to 99%.</p>
-<pre class="r"><code>pcaPreProcessing &lt;- preProcess(trainingSet[,-1], method = &quot;pca&quot;, thresh=.99)
-# removing &quot;classe&quot; column, that is the first in the data set
-trainingSetPreProc &lt;- predict(pcaPreProcessing, trainingSet[-1])
+<pre class="r"><code># removing &quot;classe&quot; column, that is the first one in the data set
+pcaPreProcessing &lt;- preProcess(trainingSet[,-1], method = &quot;pca&quot;, thresh=.99)
+pcaPreProcessing</code></pre>
+<pre><code>## 
+## Call:
+## preProcess.default(x = trainingSet[, -1], method = &quot;pca&quot;, thresh = 0.99)
+## 
+## Created from 13737 samples and 52 variables
+## Pre-processing: principal component signal extraction, scaled, centered 
+## 
+## PCA needed 37 components to capture 99 percent of the variance</code></pre>
+<p>Using the preprocessing defined above, we can transform our training set, our test set, and the grading set.</p>
+<pre class="r"><code>trainingSetPreProc &lt;- predict(pcaPreProcessing, trainingSet[-1])
+testingSetPreProc &lt;- predict(pcaPreProcessing, testingSet[-1])
+gradingSetPreProc &lt;- predict(pcaPreProcessing, gradingSetRed)
+# adding back &quot;classe&quot; variable
 trainingSetPreProc &lt;- cbind(trainingSet$classe, trainingSetPreProc)
-colnames(trainingSetPreProc)[1] &lt;- &quot;classe&quot;</code></pre>
+colnames(trainingSetPreProc)[1] &lt;- &quot;classe&quot;
+testingSetPreProc &lt;- cbind(testingSet$classe, testingSetPreProc)
+colnames(testingSetPreProc)[1] &lt;- &quot;classe&quot;</code></pre>
 </div>
 <div id="random-forest-models" class="section level2">
 <h2>Random Forest Models</h2>
 <p>We computed two random forest models, the first one using the PCA decomposition and the second one without using it.</p>
-<pre class="r"><code>library(randomForest)</code></pre>
-<pre><code>## randomForest 4.6-10
-## Type rfNews() to see new features/changes/bug fixes.</code></pre>
-<pre class="r"><code>modelRF &lt;- randomForest(classe ~ ., data = trainingSetPreProc)
-modelRF</code></pre>
+<pre class="r"><code>modelRF_PCA &lt;- randomForest(classe ~ ., data = trainingSetPreProc)
+modelRF_PCA</code></pre>
 <pre><code>## 
 ## Call:
 ##  randomForest(formula = classe ~ ., data = trainingSetPreProc) 
@@ -146,14 +165,14 @@ modelRF</code></pre>
 ##                      Number of trees: 500
 ## No. of variables tried at each split: 6
 ## 
-##         OOB estimate of  error rate: 2.21%
+##         OOB estimate of  error rate: 2.14%
 ## Confusion matrix:
 ##      A    B    C    D    E class.error
-## A 3894    7    0    3    2 0.003072197
-## B   52 2576   28    0    2 0.030850263
-## C    2   29 2345   15    5 0.021285476
-## D    6    4   91 2142    9 0.048845471
-## E    3   12   19   15 2476 0.019405941</code></pre>
+## A 3890    8    3    3    2 0.004096262
+## B   54 2577   22    1    4 0.030474041
+## C    2   31 2346   13    4 0.020868114
+## D    6    3   85 2152    6 0.044404973
+## E    2   14   21   10 2478 0.018613861</code></pre>
 <pre class="r"><code>modelRF_noPCA &lt;- randomForest(classe ~ ., data = trainingSet)
 modelRF_noPCA</code></pre>
 <pre><code>## 
@@ -163,19 +182,24 @@ modelRF_noPCA</code></pre>
 ##                      Number of trees: 500
 ## No. of variables tried at each split: 7
 ## 
-##         OOB estimate of  error rate: 0.47%
+##         OOB estimate of  error rate: 0.55%
 ## Confusion matrix:
 ##      A    B    C    D    E  class.error
-## A 3905    1    0    0    0 0.0002560164
-## B   11 2644    3    0    0 0.0052671181
-## C    0   15 2380    1    0 0.0066777963
-## D    0    0   24 2226    2 0.0115452931
-## E    0    0    2    5 2518 0.0027722772</code></pre>
+## A 3904    2    0    0    0 0.0005120328
+## B    9 2644    5    0    0 0.0052671181
+## C    0   14 2378    4    0 0.0075125209
+## D    0    0   32 2218    2 0.0150976909
+## E    0    0    1    6 2518 0.0027722772</code></pre>
 </div>
-<div id="in-sample-error-and-out-of-sample-error" class="section level2">
-<h2>In-Sample Error and Out-of-Sample Error</h2>
-<p>We computed sample errors on training set and testing set. First model:</p>
-<pre class="r"><code>table(trainingSetPreProc$classe, predict(modelRF, trainingSetPreProc))</code></pre>
+<div id="in-sample-error-and-out-of-sample-accuracy" class="section level2">
+<h2>In-Sample Error and Out-of-Sample Accuracy</h2>
+<p>We computed accuracy values on training set and testing set.</p>
+<p>In the PCA model, the values are computed as follows:</p>
+<pre class="r"><code>library(caret); library(randomForest);</code></pre>
+<pre><code>## randomForest 4.6-10
+## Type rfNews() to see new features/changes/bug fixes.</code></pre>
+<pre class="r"><code># confusion matrix for training set under PCA RF-model
+table(trainingSetPreProc$classe, predict(modelRF_PCA, trainingSetPreProc))</code></pre>
 <pre><code>##    
 ##        A    B    C    D    E
 ##   A 3906    0    0    0    0
@@ -183,19 +207,20 @@ modelRF_noPCA</code></pre>
 ##   C    0    0 2396    0    0
 ##   D    0    0    0 2252    0
 ##   E    0    0    0    0 2525</code></pre>
-<pre class="r"><code>testingSetPreProc &lt;- predict(pcaPreProcessing, testingSet[-1])
-
-table(testingSet$classe, predict(modelRF, testingSetPreProc))</code></pre>
+<pre class="r"><code>inSamplePCA_accuracy &lt;- sum(trainingSetPreProc$classe != predict(modelRF_PCA, trainingSetPreProc)) / nrow(testingSetPreProc)
+# confusion matrix for testing set under PCA RF-model
+table(testingSetPreProc$classe, predict(modelRF_PCA, testingSetPreProc))</code></pre>
 <pre><code>##    
 ##        A    B    C    D    E
-##   A 1669    2    1    1    1
-##   B   25 1107    7    0    0
-##   C    1   19 1000    6    0
-##   D    6    0   40  915    3
-##   E    3    0   10    2 1067</code></pre>
-<pre class="r"><code>sum(testingSet$classe != predict(modelRF, testingSetPreProc)) / nrow(testingSetPreProc)</code></pre>
-<pre><code>## [1] 0.02175021</code></pre>
-<pre class="r"><code>table(trainingSet$classe, predict(modelRF_noPCA, trainingSet))</code></pre>
+##   A 1669    2    0    0    3
+##   B   20 1109    7    0    3
+##   C    2   12 1001    8    3
+##   D    3    0   39  915    7
+##   E    0    5    4    3 1070</code></pre>
+<pre class="r"><code>outSamplePCA_accuracy &lt;- sum(testingSetPreProc$classe != predict(modelRF_PCA, testingSetPreProc)) / nrow(testingSetPreProc)</code></pre>
+<p>Hence, in-sample accuracy for the PCA random forest model is 0 % and out-sample accuracy is 2.0560748 %. This difference could be due to an overfitting phenomenon.</p>
+<pre class="r"><code># confusion matrix for training set under non-PCA RF-model
+table(trainingSet$classe, predict(modelRF_noPCA, trainingSet))</code></pre>
 <pre><code>##    
 ##        A    B    C    D    E
 ##   A 3906    0    0    0    0
@@ -203,29 +228,31 @@ table(testingSet$classe, predict(modelRF, testingSetPreProc))</code></pre>
 ##   C    0    0 2396    0    0
 ##   D    0    0    0 2252    0
 ##   E    0    0    0    0 2525</code></pre>
-<pre class="r"><code>table(testingSet$classe, predict(modelRF_noPCA, testingSet))</code></pre>
+<pre class="r"><code>inSampleNoPCA_accuracy &lt;- sum(trainingSet$classe != predict(modelRF_noPCA, trainingSet)) / nrow(trainingSet)
+# confusion matrix for testing set under non-PCA RF-model
+table(testingSet$classe, predict(modelRF_noPCA, testingSet))</code></pre>
 <pre><code>##    
 ##        A    B    C    D    E
 ##   A 1673    0    0    0    1
-##   B    6 1129    4    0    0
-##   C    0    7 1019    0    0
-##   D    0    0    9  954    1
-##   E    0    0    0    1 1081</code></pre>
-<pre class="r"><code>sum(testingSet$classe != predict(modelRF_noPCA, testingSet)) / nrow(testingSetPreProc)</code></pre>
-<pre><code>## [1] 0.004927782</code></pre>
+##   B    6 1132    1    0    0
+##   C    0   10 1015    1    0
+##   D    0    0    5  957    2
+##   E    0    0    0    0 1082</code></pre>
+<pre class="r"><code>outSampleNoPCA_accuracy &lt;- sum(testingSet$classe != predict(modelRF_noPCA, testingSet)) / nrow(testingSet)</code></pre>
+<p>The in-sample accuracy for the PCA random forest model is 0 % and out-sample accuracy is 0.4418012 %.</p>
 </div>
-<div id="prediction-for-the-20-observations-set" class="section level2">
-<h2>Prediction for the “20 observations set”</h2>
-<p>We finally applied the selected model to the data set containing 20 observations.</p>
-<pre class="r"><code>final20SetRedPreProc &lt;- predict(pcaPreProcessing, final20SetRed)
-predict(modelRF, final20SetRedPreProc)</code></pre>
+<div id="prediction-for-the-grading-set" class="section level2">
+<h2>Prediction for the grading set</h2>
+<p>Finally, we applied the selected models to the data set containing 20 observations. Since the non-PCA model proved to be more accurate, in case of different outputs, we preferred the one provided by the non-PCA model.</p>
+<pre class="r"><code>predict(modelRF_PCA, gradingSetPreProc)</code></pre>
 <pre><code>##  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 
-##  B  A  C  A  A  C  D  B  A  A  B  C  B  A  E  E  A  B  B  B 
+##  B  A  B  A  A  C  D  B  A  A  B  C  B  A  E  E  A  B  B  B 
 ## Levels: A B C D E</code></pre>
-<pre class="r"><code>predict(modelRF_noPCA, final20SetRed)</code></pre>
+<pre class="r"><code>predict(modelRF_noPCA, gradingSetRed)</code></pre>
 <pre><code>##  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 
 ##  B  A  B  A  A  E  D  B  A  A  B  C  B  A  E  E  A  B  B  B 
 ## Levels: A B C D E</code></pre>
+<p>The solution provided by the second model proved to be correct (since it was correctly evaluated by the grader).</p>
 </div>
 
 
