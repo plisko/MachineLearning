@@ -106,7 +106,7 @@ modelRF_noPCA
 ```
 
 
-## In-Sample Error and Out-of-Sample Accuracy
+## In-Sample Accuracy and Out-of-Sample Accuracy
 We computed accuracy values on training set and testing set.
 
 In the PCA model, the values are computed as follows:
@@ -121,7 +121,7 @@ table(testingSetPreProc$classe, predict(modelRF_PCA, testingSetPreProc))
 outSamplePCA_accuracy <- sum(testingSetPreProc$classe == predict(modelRF_PCA, testingSetPreProc)) / nrow(testingSetPreProc)
 ```
 
-Hence, in-sample accuracy for the PCA random forest model is `r inSamplePCA_accuracy*100` % and out-sample accuracy is `r outSamplePCA_accuracy*100` %. This difference could be due to an overfitting phenomenon.
+Hence, in-sample accuracy for the PCA random forest model is `r inSamplePCA_accuracy*100` % and out-sample accuracy is `r outSamplePCA_accuracy*100` % (which means an **out-sample error** of `r (1-outSamplePCA_accuracy)*100` %) This difference could be due to an overfitting phenomenon.
 
 
 ```{r computeErrorsNonPCAmodel}
@@ -133,7 +133,7 @@ table(testingSet$classe, predict(modelRF_noPCA, testingSet))
 outSampleNoPCA_accuracy <- sum(testingSet$classe == predict(modelRF_noPCA, testingSet)) / nrow(testingSet)
 ```
 
-The in-sample accuracy for the PCA random forest model is `r inSampleNoPCA_accuracy*100` % and out-sample accuracy is `r outSampleNoPCA_accuracy*100` %.
+The in-sample accuracy for the PCA random forest model is `r inSampleNoPCA_accuracy*100` % and out-sample accuracy is `r outSampleNoPCA_accuracy*100` % (which means an **out-sample error** of `r (1-outSampleNoPCA_accuracy)*100` %).
 
 
 ## Prediction for the grading set
