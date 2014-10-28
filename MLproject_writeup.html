@@ -207,7 +207,7 @@ table(trainingSetPreProc$classe, predict(modelRF_PCA, trainingSetPreProc))</code
 ##   C    0    0 2396    0    0
 ##   D    0    0    0 2252    0
 ##   E    0    0    0    0 2525</code></pre>
-<pre class="r"><code>inSamplePCA_accuracy &lt;- sum(trainingSetPreProc$classe != predict(modelRF_PCA, trainingSetPreProc)) / nrow(testingSetPreProc)
+<pre class="r"><code>inSamplePCA_accuracy &lt;- sum(trainingSetPreProc$classe == predict(modelRF_PCA, trainingSetPreProc)) / nrow(testingSetPreProc)
 # confusion matrix for testing set under PCA RF-model
 table(testingSetPreProc$classe, predict(modelRF_PCA, testingSetPreProc))</code></pre>
 <pre><code>##    
@@ -217,8 +217,8 @@ table(testingSetPreProc$classe, predict(modelRF_PCA, testingSetPreProc))</code><
 ##   C    2   12 1001    8    3
 ##   D    3    0   39  915    7
 ##   E    0    5    4    3 1070</code></pre>
-<pre class="r"><code>outSamplePCA_accuracy &lt;- sum(testingSetPreProc$classe != predict(modelRF_PCA, testingSetPreProc)) / nrow(testingSetPreProc)</code></pre>
-<p>Hence, in-sample accuracy for the PCA random forest model is 0 % and out-sample accuracy is 2.0560748 %. This difference could be due to an overfitting phenomenon.</p>
+<pre class="r"><code>outSamplePCA_accuracy &lt;- sum(testingSetPreProc$classe == predict(modelRF_PCA, testingSetPreProc)) / nrow(testingSetPreProc)</code></pre>
+<p>Hence, in-sample accuracy for the PCA random forest model is 233.4239592 % and out-sample accuracy is 97.9439252 %. This difference could be due to an overfitting phenomenon.</p>
 <pre class="r"><code># confusion matrix for training set under non-PCA RF-model
 table(trainingSet$classe, predict(modelRF_noPCA, trainingSet))</code></pre>
 <pre><code>##    
@@ -228,7 +228,7 @@ table(trainingSet$classe, predict(modelRF_noPCA, trainingSet))</code></pre>
 ##   C    0    0 2396    0    0
 ##   D    0    0    0 2252    0
 ##   E    0    0    0    0 2525</code></pre>
-<pre class="r"><code>inSampleNoPCA_accuracy &lt;- sum(trainingSet$classe != predict(modelRF_noPCA, trainingSet)) / nrow(trainingSet)
+<pre class="r"><code>inSampleNoPCA_accuracy &lt;- sum(trainingSet$classe == predict(modelRF_noPCA, trainingSet)) / nrow(trainingSet)
 # confusion matrix for testing set under non-PCA RF-model
 table(testingSet$classe, predict(modelRF_noPCA, testingSet))</code></pre>
 <pre><code>##    
@@ -238,8 +238,8 @@ table(testingSet$classe, predict(modelRF_noPCA, testingSet))</code></pre>
 ##   C    0   10 1015    1    0
 ##   D    0    0    5  957    2
 ##   E    0    0    0    0 1082</code></pre>
-<pre class="r"><code>outSampleNoPCA_accuracy &lt;- sum(testingSet$classe != predict(modelRF_noPCA, testingSet)) / nrow(testingSet)</code></pre>
-<p>The in-sample accuracy for the PCA random forest model is 0 % and out-sample accuracy is 0.4418012 %.</p>
+<pre class="r"><code>outSampleNoPCA_accuracy &lt;- sum(testingSet$classe == predict(modelRF_noPCA, testingSet)) / nrow(testingSet)</code></pre>
+<p>The in-sample accuracy for the PCA random forest model is 100 % and out-sample accuracy is 99.5581988 %.</p>
 </div>
 <div id="prediction-for-the-grading-set" class="section level2">
 <h2>Prediction for the grading set</h2>

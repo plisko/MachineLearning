@@ -115,10 +115,10 @@ In the PCA model, the values are computed as follows:
 library(caret); library(randomForest);
 # confusion matrix for training set under PCA RF-model
 table(trainingSetPreProc$classe, predict(modelRF_PCA, trainingSetPreProc))
-inSamplePCA_accuracy <- sum(trainingSetPreProc$classe != predict(modelRF_PCA, trainingSetPreProc)) / nrow(testingSetPreProc)
+inSamplePCA_accuracy <- sum(trainingSetPreProc$classe == predict(modelRF_PCA, trainingSetPreProc)) / nrow(testingSetPreProc)
 # confusion matrix for testing set under PCA RF-model
 table(testingSetPreProc$classe, predict(modelRF_PCA, testingSetPreProc))
-outSamplePCA_accuracy <- sum(testingSetPreProc$classe != predict(modelRF_PCA, testingSetPreProc)) / nrow(testingSetPreProc)
+outSamplePCA_accuracy <- sum(testingSetPreProc$classe == predict(modelRF_PCA, testingSetPreProc)) / nrow(testingSetPreProc)
 ```
 
 Hence, in-sample accuracy for the PCA random forest model is `r inSamplePCA_accuracy*100` % and out-sample accuracy is `r outSamplePCA_accuracy*100` %. This difference could be due to an overfitting phenomenon.
@@ -127,10 +127,10 @@ Hence, in-sample accuracy for the PCA random forest model is `r inSamplePCA_accu
 ```{r computeErrorsNonPCAmodel}
 # confusion matrix for training set under non-PCA RF-model
 table(trainingSet$classe, predict(modelRF_noPCA, trainingSet))
-inSampleNoPCA_accuracy <- sum(trainingSet$classe != predict(modelRF_noPCA, trainingSet)) / nrow(trainingSet)
+inSampleNoPCA_accuracy <- sum(trainingSet$classe == predict(modelRF_noPCA, trainingSet)) / nrow(trainingSet)
 # confusion matrix for testing set under non-PCA RF-model
 table(testingSet$classe, predict(modelRF_noPCA, testingSet))
-outSampleNoPCA_accuracy <- sum(testingSet$classe != predict(modelRF_noPCA, testingSet)) / nrow(testingSet)
+outSampleNoPCA_accuracy <- sum(testingSet$classe == predict(modelRF_noPCA, testingSet)) / nrow(testingSet)
 ```
 
 The in-sample accuracy for the PCA random forest model is `r inSampleNoPCA_accuracy*100` % and out-sample accuracy is `r outSampleNoPCA_accuracy*100` %.
