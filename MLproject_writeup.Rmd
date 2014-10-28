@@ -115,7 +115,7 @@ In the PCA model, the values are computed as follows:
 library(caret); library(randomForest);
 # confusion matrix for training set under PCA RF-model
 table(trainingSetPreProc$classe, predict(modelRF_PCA, trainingSetPreProc))
-inSamplePCA_accuracy <- sum(trainingSetPreProc$classe == predict(modelRF_PCA, trainingSetPreProc)) / nrow(testingSetPreProc)
+inSamplePCA_accuracy <- sum(trainingSetPreProc$classe == predict(modelRF_PCA, trainingSetPreProc)) / nrow(trainingSetPreProc)
 # confusion matrix for testing set under PCA RF-model
 table(testingSetPreProc$classe, predict(modelRF_PCA, testingSetPreProc))
 outSamplePCA_accuracy <- sum(testingSetPreProc$classe == predict(modelRF_PCA, testingSetPreProc)) / nrow(testingSetPreProc)
