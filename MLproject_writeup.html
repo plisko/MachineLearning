@@ -191,8 +191,8 @@ modelRF_noPCA</code></pre>
 ## D    0    0   32 2218    2 0.0150976909
 ## E    0    0    1    6 2518 0.0027722772</code></pre>
 </div>
-<div id="in-sample-error-and-out-of-sample-accuracy" class="section level2">
-<h2>In-Sample Error and Out-of-Sample Accuracy</h2>
+<div id="in-sample-accuracy-and-out-of-sample-accuracy" class="section level2">
+<h2>In-Sample Accuracy and Out-of-Sample Accuracy</h2>
 <p>We computed accuracy values on training set and testing set.</p>
 <p>In the PCA model, the values are computed as follows:</p>
 <pre class="r"><code>library(caret); library(randomForest);</code></pre>
@@ -218,7 +218,7 @@ table(testingSetPreProc$classe, predict(modelRF_PCA, testingSetPreProc))</code><
 ##   D    3    0   39  915    7
 ##   E    0    5    4    3 1070</code></pre>
 <pre class="r"><code>outSamplePCA_accuracy &lt;- sum(testingSetPreProc$classe == predict(modelRF_PCA, testingSetPreProc)) / nrow(testingSetPreProc)</code></pre>
-<p>Hence, in-sample accuracy for the PCA random forest model is 100 % and out-sample accuracy is 97.9439252 %. This difference could be due to an overfitting phenomenon.</p>
+<p>Hence, in-sample accuracy for the PCA random forest model is 100 % and out-sample accuracy is 97.9439252 % (which means an <strong>out-sample error</strong> of 2.0560748 %) This difference could be due to an overfitting phenomenon.</p>
 <pre class="r"><code># confusion matrix for training set under non-PCA RF-model
 table(trainingSet$classe, predict(modelRF_noPCA, trainingSet))</code></pre>
 <pre><code>##    
@@ -239,7 +239,7 @@ table(testingSet$classe, predict(modelRF_noPCA, testingSet))</code></pre>
 ##   D    0    0    5  957    2
 ##   E    0    0    0    0 1082</code></pre>
 <pre class="r"><code>outSampleNoPCA_accuracy &lt;- sum(testingSet$classe == predict(modelRF_noPCA, testingSet)) / nrow(testingSet)</code></pre>
-<p>The in-sample accuracy for the PCA random forest model is 100 % and out-sample accuracy is 99.5581988 %.</p>
+<p>The in-sample accuracy for the PCA random forest model is 100 % and out-sample accuracy is 99.5581988 % (which means an <strong>out-sample error</strong> of 0.4418012 %).</p>
 </div>
 <div id="prediction-for-the-grading-set" class="section level2">
 <h2>Prediction for the grading set</h2>
